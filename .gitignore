@@ -1,0 +1,4 @@
+# Ignorar imágenes PNG y GIF
+*.png
+*.gif
+venv/       
