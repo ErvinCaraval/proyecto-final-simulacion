@@ -12,7 +12,7 @@ import os
 # Import from existing code
 sys.path.insert(0, os.path.dirname(__file__))
 from campo_velocidadesV4 import (
-    FlujoNewtonRaphson, NY, NX, V0_INITIAL, VY_TEST,
+    NewtonRaphsonFlowSolver, NY, NX, V0_INITIAL, VY_TEST,
     VIGA_INF_X_MIN, VIGA_INF_X_MAX, VIGA_INF_Y_MIN, VIGA_INF_Y_MAX,
     VIGA_SUP_X_MIN, VIGA_SUP_X_MAX, VIGA_SUP_Y_MIN, VIGA_SUP_Y_MAX,
     interpolate_cubic_natural_manual
@@ -163,7 +163,7 @@ def generate_all_streamlines():
     print("\nRunning simulation...\n")
     
     # Run simulation
-    solver = FlujoNewtonRaphson()
+    solver = NewtonRaphsonFlowSolver()
     result = solver.solve(linear_solver_method='conjugate-gradient', theoretical_analysis=False)
     
     if not result['converged']:

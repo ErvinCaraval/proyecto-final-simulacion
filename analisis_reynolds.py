@@ -10,7 +10,7 @@ import os
 
 # Import the solver class
 sys.path.insert(0, os.path.dirname(__file__))
-from campo_velocidadesV4 import FlujoNewtonRaphson, NY, NX, V0_INITIAL, VY_TEST
+from campo_velocidadesV4 import NewtonRaphsonFlowSolver, NY, NX, V0_INITIAL, VY_TEST
 
 # Physical Parameters
 RHO = 1.0  # kg/m^3
@@ -26,7 +26,7 @@ def calculate_reynolds():
     print("=" * 80)
     print("\nRunning simulation to obtain velocity field...\n")
     
-    solver = FlujoNewtonRaphson()
+    solver = NewtonRaphsonFlowSolver()
     result = solver.solve(linear_solver_method='conjugate-gradient', theoretical_analysis=False)
     
     if not result['converged']:
