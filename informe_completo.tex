@@ -59,10 +59,10 @@ El dominio corresponde a un canal rectangular con dos regiones internas que repr
 \end{itemize}
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=\columnwidth]{figuras/dominio_computacional.png}
-\caption{Representación física del modelo mostrando el canal rectangular con dos obstáculos (vigas) y las condiciones de frontera aplicadas en cada región.}
-\label{fig:dominio}
+    \centering
+    \includegraphics[width=0.95\linewidth]{figuras/dominio_real.png}
+    \caption{Dominio computacional y condiciones de frontera. El canal tiene dimensiones $50 \times 5$ con dos obstáculos rectangulares.}
+    \label{fig:dominio}
 \end{figure}
 
 \subsection{Ecuaciones Gobernantes}
@@ -96,7 +96,7 @@ Con el fin de aproximar numéricamente el comportamiento del fluido, el dominio 
 \item $N_y = 5$ nodos en dirección vertical  
 \item Tamaño de celda homogéneo $h = 1$
 \item Total de nodos: $250$
-\item Incógnitas (nodos internos): $105$
+\item Incógnitas (nodos internos): $134$
 \end{itemize}
 
 La presencia de obstáculos sólidos se incorpora anulando la velocidad en los nodos correspondientes, mientras que en los bordes se aplican las condiciones previamente definidas.
@@ -150,7 +150,7 @@ Cada patrón actúa como una regla de actualización específica durante la simu
 
 Para resolver el sistema no lineal generado, se aplicó el método de Newton-Raphson. Con el fin de reducir el costo computacional, el procedimiento se implementó sobre una \textbf{malla optimizada de $5 \times 50$ celdas}, con tamaño $h=8$, manteniendo la estructura física del dominio.
 
-Esta optimización reduce significativamente el número de incógnitas de $250$ a $105$, acelerando cada iteración sin comprometer la captura de las características principales del flujo.
+Esta optimización reduce significativamente el número de incógnitas de $250$ a $134$, acelerando cada iteración sin comprometer la captura de las características principales del flujo.
 
 \subsection{Formulación del Sistema No Lineal}
 
@@ -160,7 +160,7 @@ Tras discretizar los términos, se obtuvo un sistema algebraico donde aparecen p
 \mathbf{F}(\mathbf{X}) = \mathbf{0}
 \end{equation}
 
-donde $\mathbf{X}$ es el vector de velocidades y $\mathbf{F}$ es el vector de residuos. El método de Newton-Raphson itera según:
+donde $\mathbf{X}$ es el vector de velocidades y $\mathbf{F}$ es el vector de funciones del sistema. El método de Newton-Raphson itera según:
 
 \begin{equation}
 \mathbf{X}^{(k+1)} = \mathbf{X}^{(k)} + \mathbf{H}^{(k)}
@@ -188,7 +188,7 @@ El Método de Newton-Raphson requiere la evaluación de la matriz Jacobiana, que
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\columnwidth]{figuras/estructura_jacobiano.png}
-\caption{Estructura dispersa de la matriz Jacobiana ($105 \times 105$) mostrando el patrón de cinco diagonales característico. Densidad: $\approx 4.76\%$.}
+\caption{Estructura dispersa de la matriz Jacobiana ($134 \times 134$) mostrando el patrón de cinco diagonales característico.}
 \label{fig:jacobiano}
 \end{figure}
 
@@ -487,6 +487,63 @@ Las derivadas parciales son:
 \frac{\partial F_{i,j}}{\partial v^x_{i,j-1}} &= -\frac{1}{4} - \frac{1}{2}v^y_{i,j}
 \end{align}
 
+Para la implementación computacional, se utiliza la siguiente notación simplificada para los coeficientes de la matriz Jacobiana, correspondientes a la diagonal principal y sus vecinos, tal como se muestra en la siguiente figura:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figuras/notacion_jacobiano.png}
+    \caption*{Notación de coeficientes del Jacobiano.}
+\end{figure}
+
 Estas cinco derivadas no nulas por ecuación generan la estructura dispersa de banda observada en la Fig. \ref{fig:jacobiano}.
+
+\section*{Anexo C: Ecuaciones Discretizadas en Nodos Específicos}
+
+A continuación se presentan las ecuaciones discretizadas explícitas para 9 nodos representativos de la malla, mostrando la aplicación de las condiciones de frontera (donde $\mathbf{1}$, $\mathbf{0}$ y $\mathbf{V_0}$ representan valores de frontera):
+
+\noindent\textbf{Nodo (1,1)}
+\begin{equation*}
+v^x_{1,1} = \frac{1}{4} \left\{ v^x_{2,1} + \mathbf{1} + v^x_{1,2} + \mathbf{0} - \frac{1}{2}v^x_{1,1}(v^x_{2,1} - \mathbf{1}) - \frac{1}{2}v^y_{1,1}(v^x_{1,2} - \mathbf{0}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (1,20)}
+\begin{equation*}
+v^x_{1,20} = \frac{1}{4} \left\{ v^x_{2,20} + \mathbf{1} + v^x_{1,21} + v^x_{1,19} - \frac{1}{2}v^x_{1,20}(v^x_{2,20} - \mathbf{1}) - \frac{1}{2}v^y_{1,20}(v^x_{1,21} - v^x_{1,19}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (1,39)}
+\begin{equation*}
+v^x_{1,39} = \frac{1}{4} \left\{ v^x_{2,39} + \mathbf{1} + \mathbf{V_0} + v^x_{1,38} - \frac{1}{2}v^x_{1,39}(v^x_{2,39} - \mathbf{1}) - \frac{1}{2}v^y_{1,39}(\mathbf{V_0} - v^x_{1,38}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (174,1)}
+\begin{equation*}
+v^x_{174,1} = \frac{1}{4} \left\{ v^x_{175,1} + v^x_{173,1} + v^x_{174,2} + \mathbf{0} - \frac{1}{2}v^x_{174,1}(v^x_{175,1} - v^x_{173,1}) - \frac{1}{2}v^y_{174,1}(v^x_{174,2} - \mathbf{0}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (200,20)}
+\begin{equation*}
+v^x_{200,20} = \frac{1}{4} \left\{ v^x_{201,20} + v^x_{199,20} + v^x_{200,21} + v^x_{200,19} - \frac{1}{2}v^x_{200,20}(v^x_{201,20} - v^x_{199,20}) - \frac{1}{2}v^y_{200,20}(v^x_{200,21} - v^x_{200,19}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (200,39)}
+\begin{equation*}
+v^x_{200,39} = \frac{1}{4} \left\{ v^x_{201,39} + v^x_{199,39} + \mathbf{V_0} + v^x_{200,38} - \frac{1}{2}v^x_{200,39}(v^x_{201,39} - v^x_{199,39}) - \frac{1}{2}v^y_{200,39}(\mathbf{V_0} - v^x_{200,38}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (399,1)}
+\begin{equation*}
+v^x_{399,1} = \frac{1}{4} \left\{ \mathbf{0} + v^x_{398,1} + v^x_{399,2} + \mathbf{0} - \frac{1}{2}v^x_{399,1}(\mathbf{0} - v^x_{398,1}) - \frac{1}{2}v^y_{399,1}(v^x_{399,2} - \mathbf{0}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (399,20)}
+\begin{equation*}
+v^x_{399,20} = \frac{1}{4} \left\{ \mathbf{0} + v^x_{398,20} + v^x_{399,21} + v^x_{399,19} - \frac{1}{2}v^x_{399,20}(\mathbf{0} - v^x_{398,20}) - \frac{1}{2}v^y_{399,20}(v^x_{399,21} - v^x_{399,19}) \right\}
+\end{equation*}
+
+\noindent\textbf{Nodo (389,39)}
+\begin{equation*}
+v^x_{389,39} = \frac{1}{4} \left\{ v^x_{390,39} + v^x_{388,39} + \mathbf{V_0} + v^x_{389,38} - \frac{1}{2}v^x_{389,39}(v^x_{390,39} - v^x_{388,39}) - \frac{1}{2}v^y_{389,39}(\mathbf{V_0} - v^x_{389,38}) \right\}
+\end{equation*}
 
 \end{document}

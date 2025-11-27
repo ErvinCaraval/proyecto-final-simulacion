@@ -53,7 +53,7 @@ class FlujoNewtonRaphson:
         if not (1 <= i <= NX - 2 and 1 <= j <= NY - 2): return False
         if j == 1 and VIGA_INF_X_MIN <= i < VIGA_INF_X_MAX: return False
         # Forzar a cero las celdas en j=2 para toda la región donde la viga influye
-        if j == 2 and i >= VIGA_INF_X_MIN: return False
+        # if j == 2 and i >= VIGA_INF_X_MIN: return False
         return True
     
     def _preparar_mapa_incognitas(self):
@@ -70,8 +70,12 @@ class FlujoNewtonRaphson:
         V_matrix[0, :], V_matrix[:, NX - 1] = 0.0, 0.0
         V_matrix[VIGA_INF_Y_MIN:VIGA_INF_Y_MAX, VIGA_INF_X_MIN:VIGA_INF_X_MAX] = 0.0
         V_matrix[VIGA_SUP_Y_MIN:VIGA_SUP_Y_MAX, VIGA_SUP_X_MIN:VIGA_SUP_X_MAX] = 0.0
-        # Forzar a cero la fila j=2 desde el inicio de la viga en adelante (zona de influencia)
-        V_matrix[2, VIGA_INF_X_MIN:] = 0.0
+        # Forzar a cero la fila j=2 desde el inicio de la viga en adelante (zona de influencia) - ELIMINADO
+        # V_matrix[2, VIGA_INF_X_MIN:] = 0.0
+        
+        # Suavizar la entrada al obstáculo superior en la fila 4 (Top)
+        # Descenso lineal desde X=30 hasta X=40 (donde empieza el obstáculo y es 0)
+        V_matrix[4, 30:40] = np.linspace(V0_INITIAL, 0.0, 10)
         for j in range(NY):
             for i in range(NX):
                 if self._es_incognita(i, j): V_matrix[j, i] = v_init * (j / (NY - 1))

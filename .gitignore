@@ -38,13 +38,3 @@ Thumbs.db
 
 # Reportes generados
 problem_description.txt
-
-# LaTeX artifacts
-*.aux
-*.out
-*.toc
-*.fls
-*.fdb_latexmk
-*.synctex.gz
-*.pdf
-!informe_completo.pdf
