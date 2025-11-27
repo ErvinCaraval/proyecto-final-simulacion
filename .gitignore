@@ -1,4 +1,50 @@
-# Ignorar imágenes PNG y GIF
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Outputs del proyecto
+graficas_V4/
+graficas_V4_1/
+animaciones_pro/
+analisis_avanzado/
 *.png
 *.gif
-venv/       
+
+# Archivos temporales
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Reportes generados
+problem_description.txt
+
+# LaTeX artifacts
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.pdf
+!informe_completo.pdf
