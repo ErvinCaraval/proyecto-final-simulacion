@@ -38,3 +38,15 @@ Thumbs.db
 
 # Reportes generados
 problem_description.txt
+
+# LaTeX
+*.aux
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.pdf
+*.dvi
+*.bbl
+*.blg
