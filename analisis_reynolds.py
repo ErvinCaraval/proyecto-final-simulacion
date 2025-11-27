@@ -1,194 +1,185 @@
 """
-Análisis del Número de Reynolds
-================================
-Este script calcula el número de Reynolds para caracterizar el régimen de flujo
-según lo solicitado en el problema original.
+Reynolds Number Analysis
+========================
+Calculates the Reynolds number to characterize the flow regime.
 """
 
 import numpy as np
 import sys
 import os
 
-# Importar la clase del código existente
+# Import the solver class
 sys.path.insert(0, os.path.dirname(__file__))
 from campo_velocidadesV4 import FlujoNewtonRaphson, NY, NX, V0_INITIAL, VY_TEST
 
-# Parámetros físicos (según el problema)
-RHO = 1.0  # kg/m³ (densidad del fluido)
-NU = 1.0   # m²/s (viscosidad cinemática)
-MU = NU * RHO  # Pa·s (viscosidad dinámica)
+# Physical Parameters
+RHO = 1.0  # kg/m^3
+NU = 1.0   # m^2/s
+MU = NU * RHO  # Pa*s
 
-def calcular_reynolds():
+def calculate_reynolds():
     """
-    Calcula el número de Reynolds del flujo.
-    Re = (ρ * V * L) / μ
-    donde:
-    - V = velocidad característica
-    - L = longitud característica
+    Calculates the Reynolds number: Re = (rho * V * L) / mu
     """
     print("=" * 80)
-    print("ANÁLISIS DEL NÚMERO DE REYNOLDS")
+    print("REYNOLDS NUMBER ANALYSIS")
     print("=" * 80)
-    print("\n📊 Ejecutando simulación para obtener campo de velocidades...\n")
+    print("\nRunning simulation to obtain velocity field...\n")
     
-    # Ejecutar simulación
     solver = FlujoNewtonRaphson()
-    resultado = solver.solve(linear_solver_method='conjugate-gradient', analisis_teorico=False)
+    result = solver.solve(linear_solver_method='conjugate-gradient', theoretical_analysis=False)
     
-    if not resultado['converged']:
-        print("❌ Error: La simulación no convergió. No se puede calcular Reynolds.")
+    if not result['converged']:
+        print("Error: Simulation did not converge. Cannot calculate Reynolds number.")
         return
     
-    V_solution = resultado['solution']
+    V_solution = result['solution']
     
-    # Calcular velocidades características
+    # Characteristic velocities
     V_max = np.max(V_solution)
-    V_promedio = np.mean(V_solution[V_solution > 0])  # Promedio excluyendo obstáculos
-    V_entrada = V0_INITIAL
+    V_avg = np.mean(V_solution[V_solution > 0])
+    V_inlet = V0_INITIAL
     
-    # Longitudes características
-    L_altura = NY  # Altura del canal
-    L_longitud = NX  # Longitud del canal
+    # Characteristic lengths
+    L_height = NY
+    L_length = NX
     
-    # Calcular diferentes números de Reynolds
-    Re_max = (RHO * V_max * L_altura) / MU
-    Re_promedio = (RHO * V_promedio * L_altura) / MU
-    Re_entrada = (RHO * V_entrada * L_altura) / MU
+    # Calculate Reynolds numbers
+    Re_max = (RHO * V_max * L_height) / MU
+    Re_avg = (RHO * V_avg * L_height) / MU
+    Re_inlet = (RHO * V_inlet * L_height) / MU
     
-    # Generar reporte
-    reporte = f"""
+    report = f"""
 {'=' * 80}
-REPORTE DE ANÁLISIS DE REYNOLDS
+REYNOLDS ANALYSIS REPORT
 {'=' * 80}
 
-1. PARÁMETROS FÍSICOS
-   - Densidad (ρ):              {RHO} kg/m³
-   - Viscosidad cinemática (ν): {NU} m²/s
-   - Viscosidad dinámica (μ):   {MU} Pa·s
+1. PHYSICAL PARAMETERS
+   - Density (rho):             {RHO} kg/m^3
+   - Kinematic Viscosity (nu):  {NU} m^2/s
+   - Dynamic Viscosity (mu):    {MU} Pa*s
 
-2. GEOMETRÍA
-   - Altura del canal (L):      {L_altura} unidades
-   - Longitud del canal:        {L_longitud} unidades
-   - Resolución de malla:       {NY} × {NX}
+2. GEOMETRY
+   - Channel Height (L):        {L_height} units
+   - Channel Length:            {L_length} units
+   - Mesh Resolution:           {NY} x {NX}
 
-3. VELOCIDADES CARACTERÍSTICAS
-   - Velocidad de entrada:      {V_entrada:.4f} m/s
-   - Velocidad máxima:          {V_max:.4f} m/s
-   - Velocidad promedio:        {V_promedio:.4f} m/s
-   - Componente vertical (Vy):  {VY_TEST:.4f} m/s
+3. CHARACTERISTIC VELOCITIES
+   - Inlet Velocity:            {V_inlet:.4f} m/s
+   - Max Velocity:              {V_max:.4f} m/s
+   - Average Velocity:          {V_avg:.4f} m/s
+   - Vertical Component (Vy):   {VY_TEST:.4f} m/s
 
-4. NÚMEROS DE REYNOLDS CALCULADOS
+4. CALCULATED REYNOLDS NUMBERS
    
-   Re (basado en V_entrada) = {Re_entrada:.2f}
-   Re (basado en V_max)     = {Re_max:.2f}
-   Re (basado en V_promedio)= {Re_promedio:.2f}
+   Re (based on V_inlet) = {Re_inlet:.2f}
+   Re (based on V_max)   = {Re_max:.2f}
+   Re (based on V_avg)   = {Re_avg:.2f}
 
-5. INTERPRETACIÓN FÍSICA
+5. PHYSICAL INTERPRETATION
 
-   Régimen de Flujo:
+   Flow Regime:
    """
     
-    # Clasificación del régimen
-    Re_ref = Re_entrada  # Usamos la velocidad de entrada como referencia
+    Re_ref = Re_inlet
     
     if Re_ref < 2000:
-        regimen = "LAMINAR"
-        descripcion = """
-   ✓ Re < 2000 → FLUJO LAMINAR
+        regime = "LAMINAR"
+        description = """
+   Re < 2000 -> LAMINAR FLOW
    
-   El flujo es ordenado y predecible. Las capas de fluido se deslizan
-   suavemente unas sobre otras sin mezclarse. Este régimen justifica:
+   The flow is ordered and predictable. Fluid layers slide smoothly 
+   over one another without mixing. This regime justifies:
    
-   - El uso de métodos iterativos para resolver las ecuaciones
-   - La convergencia relativamente rápida de los solvers
-   - La estabilidad numérica observada en la simulación
+   - The use of iterative methods.
+   - The relatively fast convergence of solvers.
+   - The numerical stability observed.
    
-   NOTA: En este régimen, los términos no lineales de Navier-Stokes
-   tienen una contribución pequeña pero no despreciable, por lo que
-   el enfoque de Newton-Raphson es apropiado.
+   NOTE: In this regime, non-linear Navier-Stokes terms have a small 
+   but non-negligible contribution, making Newton-Raphson appropriate.
         """
     elif Re_ref < 4000:
-        regimen = "TRANSICIÓN"
-        descripcion = """
-   ⚠ 2000 < Re < 4000 → FLUJO EN TRANSICIÓN
+        regime = "TRANSITION"
+        description = """
+   2000 < Re < 4000 -> TRANSITION FLOW
    
-   El flujo está en una zona intermedia entre laminar y turbulento.
-   Pueden aparecer pequeñas perturbaciones que crecen o se amortiguan.
+   The flow is in an intermediate zone between laminar and turbulent.
+   Small perturbations may grow or decay.
    
-   - Mayor sensibilidad a las condiciones de frontera
-   - Posible aparición de inestabilidades locales
-   - Requiere mayor cuidado en la discretización espacial
+   - Higher sensitivity to boundary conditions.
+   - Possible appearance of local instabilities.
+   - Requires careful spatial discretization.
         """
     else:
-        regimen = "TURBULENTO"
-        descripcion = """
-   ⚠ Re > 4000 → FLUJO TURBULENTO
+        regime = "TURBULENT"
+        description = """
+   Re > 4000 -> TURBULENT FLOW
    
-   El flujo es caótico y presenta remolinos a múltiples escalas.
+   The flow is chaotic with multi-scale eddies.
    
-   ADVERTENCIA: La simulación actual NO incluye modelos de turbulencia
-   (como k-ε o LES). Los resultados deben interpretarse con precaución.
+   WARNING: Current simulation does NOT include turbulence models 
+   (like k-epsilon or LES). Results should be interpreted with caution.
    
-   Para este régimen se recomienda:
-   - Usar modelos de turbulencia apropiados
-   - Aumentar significativamente la resolución de malla
-   - Considerar simulaciones transitorias (no estacionarias)
+   Recommendations:
+   - Use appropriate turbulence models.
+   - Significantly increase mesh resolution.
+   - Consider transient simulations.
         """
     
-    reporte += descripcion
+    report += description
     
-    reporte += f"""
+    report += f"""
 
-6. VALIDACIÓN DEL ENFOQUE NUMÉRICO
+6. NUMERICAL APPROACH VALIDATION
 
-   El problema original sugería verificar si los términos no lineales
-   pueden despreciarse. Basándonos en Re = {Re_ref:.2f}:
+   Based on Re = {Re_ref:.2f}:
    
    """
     
     if Re_ref < 1:
-        reporte += """   ✓ Re << 1: Los términos no lineales son despreciables.
-     Se podría usar un solver lineal directo (Stokes flow).
+        report += """   Re << 1: Non-linear terms are negligible (Stokes flow).
+     A direct linear solver could be used.
    """
     elif Re_ref < 100:
-        reporte += """   ✓ Re < 100: Los términos no lineales son pequeños pero presentes.
-     El enfoque de Newton-Raphson es apropiado y eficiente.
+        report += """   Re < 100: Non-linear terms are small but present.
+     Newton-Raphson is appropriate and efficient.
    """
     else:
-        reporte += """   ⚠ Re > 100: Los términos no lineales son significativos.
-     El enfoque de Newton-Raphson es NECESARIO (no opcional).
-     No se puede linealizar el problema sin perder precisión.
+        report += """   Re > 100: Non-linear terms are significant.
+     Newton-Raphson is NECESSARY.
+     Linearization would lose precision.
    """
     
-    reporte += f"""
+    report += f"""
 
-7. CONCLUSIONES
+7. CONCLUSIONS
 
-   - Régimen de flujo: {regimen}
-   - Número de Reynolds de referencia: {Re_ref:.2f}
-   - Enfoque numérico: {'Apropiado' if Re_ref < 4000 else 'Requiere mejoras'}
-   - Convergencia observada: {'Sí' if resultado['converged'] else 'No'}
-   - Iteraciones necesarias: {resultado['iterations']}
+   - Flow Regime: {regime}
+   - Reference Reynolds: {Re_ref:.2f}
+   - Numerical Approach: {'Appropriate' if Re_ref < 4000 else 'Needs improvement'}
+   - Convergence: {'Yes' if result['converged'] else 'No'}
+   - Iterations: {result['iterations']}
 
 {'=' * 80}
 """
     
-    # Imprimir en consola
-    print(reporte)
+    print(report)
     
-    # Guardar en archivo
-    ruta_reporte = os.path.join('analisis_avanzado', 'reporte_reynolds.txt')
-    with open(ruta_reporte, 'w', encoding='utf-8') as f:
-        f.write(reporte)
+    report_path = os.path.join('analisis_avanzado', 'reporte_reynolds.txt')
+    if not os.path.exists('analisis_avanzado'):
+        os.makedirs('analisis_avanzado')
+        
+    with open(report_path, 'w', encoding='utf-8') as f:
+        f.write(report)
     
-    print(f"\n✅ Reporte guardado en: {ruta_reporte}\n")
+    print(f"\nReport saved to: {report_path}\n")
     
     return {
-        'Re_entrada': Re_entrada,
+        'Re_inlet': Re_inlet,
         'Re_max': Re_max,
-        'Re_promedio': Re_promedio,
-        'regimen': regimen
+        'Re_avg': Re_avg,
+        'regime': regime
     }
 
 if __name__ == '__main__':
-    calcular_reynolds()
+    calculate_reynolds()

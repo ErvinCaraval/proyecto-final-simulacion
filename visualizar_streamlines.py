@@ -1,8 +1,7 @@
 """
-Visualización de Líneas de Corriente (Streamlines)
-===================================================
-Este script genera gráficos con líneas de corriente para visualizar
-el patrón de flujo alrededor de los obstáculos.
+Streamline Visualization
+========================
+Generates streamline plots to visualize flow patterns around obstacles.
 """
 
 import numpy as np
@@ -10,7 +9,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 
-# Importar del código existente
+# Import from existing code
 sys.path.insert(0, os.path.dirname(__file__))
 from campo_velocidadesV4 import (
     FlujoNewtonRaphson, NY, NX, V0_INITIAL, VY_TEST,
@@ -19,7 +18,7 @@ from campo_velocidadesV4 import (
     interpolate_cubic_natural_manual
 )
 
-# Importar interpolación bicúbica del archivo V4.1
+# Import bicubic interpolation from V4.1
 import importlib.util
 spec = importlib.util.spec_from_file_location("campo_v4_1", "campo_velocidadesV4.1.py")
 campo_v4_1 = importlib.util.module_from_spec(spec)
@@ -28,49 +27,48 @@ interpolate_bicubic_natural = campo_v4_1.interpolate_bicubic_natural
 
 plt.style.use('dark_background')
 
-def calcular_campo_vy(Vx_matrix):
+def calculate_vy_field(Vx_matrix):
     """
-    Estima el campo de velocidades Vy usando la ecuación de continuidad.
-    ∂Vx/∂x + ∂Vy/∂y = 0  →  ∂Vy/∂y = -∂Vx/∂x
+    Estimates the Vy velocity field using the continuity equation.
+    dVx/dx + dVy/dy = 0  ->  dVy/dy = -dVx/dx
     """
     Vy_matrix = np.full_like(Vx_matrix, VY_TEST)
     
-    # Aplicar ecuación de continuidad de forma simplificada
+    # Apply continuity equation (simplified)
     for j in range(1, NY - 1):
         for i in range(1, NX - 1):
-            # Derivada de Vx respecto a x (diferencias centradas)
+            # Derivative of Vx with respect to x (central differences)
             dVx_dx = (Vx_matrix[j, i+1] - Vx_matrix[j, i-1]) / 2.0
             
-            # Estimar Vy usando continuidad (simplificado)
-            # En realidad necesitaríamos integrar, pero usamos aproximación
+            # Estimate Vy using continuity
             Vy_matrix[j, i] = VY_TEST - 0.5 * dVx_dx
     
-    # Forzar a cero en obstáculos
+    # Force zero at obstacles
     Vy_matrix[VIGA_INF_Y_MIN:VIGA_INF_Y_MAX, VIGA_INF_X_MIN:VIGA_INF_X_MAX] = 0.0
     Vy_matrix[VIGA_SUP_Y_MIN:VIGA_SUP_Y_MAX, VIGA_SUP_X_MIN:VIGA_SUP_X_MAX] = 0.0
     
     return Vy_matrix
 
-def crear_streamlines_basico(Vx, Vy, titulo, nombre_archivo):
-    """Crea visualización básica con streamlines sin interpolación."""
+def create_streamlines_basic(Vx, Vy, title, filename):
+    """Creates basic streamline visualization without interpolation."""
     fig, ax = plt.subplots(figsize=(16, 6))
     
-    # Crear grilla para streamplot
+    # Create grid for streamplot
     x = np.arange(0, NX)
     y = np.arange(0, NY)
     X, Y = np.meshgrid(x, y)
     
-    # Mapa de calor de velocidad total
-    velocidad_total = np.sqrt(Vx**2 + Vy**2)
-    im = ax.imshow(velocidad_total, cmap='plasma', origin='lower', 
+    # Total velocity heatmap
+    velocity_total = np.sqrt(Vx**2 + Vy**2)
+    im = ax.imshow(velocity_total, cmap='plasma', origin='lower', 
                    extent=[0, NX, 0, NY], alpha=0.6, vmin=0, vmax=V0_INITIAL)
     
-    # Líneas de corriente
+    # Streamlines
     ax.streamplot(X[0, :], Y[:, 0], Vx, Vy, 
                   color='cyan', linewidth=1.5, density=1.5, 
                   arrowsize=1.5, arrowstyle='->')
     
-    # Dibujar obstáculos
+    # Draw obstacles
     ax.add_patch(plt.Rectangle((VIGA_INF_X_MIN, VIGA_INF_Y_MIN), 
                                VIGA_INF_X_MAX-VIGA_INF_X_MIN, 
                                VIGA_INF_Y_MAX-VIGA_INF_Y_MIN, 
@@ -82,30 +80,30 @@ def crear_streamlines_basico(Vx, Vy, titulo, nombre_archivo):
     
     ax.set_xlim(0, NX)
     ax.set_ylim(0, NY)
-    ax.set_xlabel('Posición X', fontsize=12)
-    ax.set_ylabel('Posición Y', fontsize=12)
-    ax.set_title(titulo, fontsize=14, weight='bold')
+    ax.set_xlabel('X Position', fontsize=12)
+    ax.set_ylabel('Y Position', fontsize=12)
+    ax.set_title(title, fontsize=14, weight='bold')
     
     cbar = fig.colorbar(im, ax=ax)
-    cbar.set_label('Velocidad Total (m/s)', fontsize=11)
+    cbar.set_label('Total Velocity (m/s)', fontsize=11)
     
     plt.tight_layout()
-    ruta = os.path.join('analisis_avanzado', nombre_archivo)
-    plt.savefig(ruta, dpi=150, bbox_inches='tight')
+    path = os.path.join('analisis_avanzado', filename)
+    plt.savefig(path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f"✅ Guardado: {ruta}")
+    print(f"Saved: {path}")
 
-def crear_streamlines_interpolado(Vx_low, Vy_low, metodo_interp, titulo, nombre_archivo):
-    """Crea visualización con streamlines usando interpolación spline."""
+def create_streamlines_interpolated(Vx_low, Vy_low, interp_method, title, filename):
+    """Creates streamline visualization using spline interpolation."""
     
-    # Interpolar Vx
-    if metodo_interp == 'manual':
+    # Interpolate Vx
+    if interp_method == 'manual':
         Vx_high = interpolate_cubic_natural_manual(Vx_low)
     else:
         Vx_high = interpolate_bicubic_natural(Vx_low)
     
-    # Interpolar Vy (mismo método)
-    if metodo_interp == 'manual':
+    # Interpolate Vy (same method)
+    if interp_method == 'manual':
         Vy_high = interpolate_cubic_natural_manual(Vy_low)
     else:
         Vy_high = interpolate_bicubic_natural(Vy_low)
@@ -114,22 +112,22 @@ def crear_streamlines_interpolado(Vx_low, Vy_low, metodo_interp, titulo, nombre_
     
     fig, ax = plt.subplots(figsize=(18, 7))
     
-    # Crear grilla de alta resolución
+    # Create high resolution grid
     x_high = np.linspace(0, NX-1, NX_high)
     y_high = np.linspace(0, NY-1, NY_high)
     X_high, Y_high = np.meshgrid(x_high, y_high)
     
-    # Mapa de calor
-    velocidad_total = np.sqrt(Vx_high**2 + Vy_high**2)
-    im = ax.imshow(velocidad_total, cmap='inferno', origin='lower', 
+    # Heatmap
+    velocity_total = np.sqrt(Vx_high**2 + Vy_high**2)
+    im = ax.imshow(velocity_total, cmap='inferno', origin='lower', 
                    extent=[0, NX, 0, NY], alpha=0.7, vmin=0, vmax=V0_INITIAL)
     
-    # Streamlines con mayor densidad
+    # Streamlines with higher density
     ax.streamplot(x_high, y_high, Vx_high, Vy_high, 
                   color='white', linewidth=1.2, density=2.0, 
                   arrowsize=1.2, arrowstyle='->', zorder=5)
     
-    # Obstáculos
+    # Obstacles
     ax.add_patch(plt.Rectangle((VIGA_INF_X_MIN, VIGA_INF_Y_MIN), 
                                VIGA_INF_X_MAX-VIGA_INF_X_MIN, 
                                VIGA_INF_Y_MAX-VIGA_INF_Y_MIN, 
@@ -143,76 +141,76 @@ def crear_streamlines_interpolado(Vx_low, Vy_low, metodo_interp, titulo, nombre_
     
     ax.set_xlim(0, NX)
     ax.set_ylim(0, NY)
-    ax.set_xlabel('Posición X', fontsize=13)
-    ax.set_ylabel('Posición Y', fontsize=13)
-    ax.set_title(titulo, fontsize=15, weight='bold')
+    ax.set_xlabel('X Position', fontsize=13)
+    ax.set_ylabel('Y Position', fontsize=13)
+    ax.set_title(title, fontsize=15, weight='bold')
     ax.grid(True, alpha=0.2, linestyle='--')
     
     cbar = fig.colorbar(im, ax=ax, shrink=0.8)
-    cbar.set_label('Velocidad Total (m/s)', fontsize=12)
+    cbar.set_label('Total Velocity (m/s)', fontsize=12)
     
     plt.tight_layout()
-    ruta = os.path.join('analisis_avanzado', nombre_archivo)
-    plt.savefig(ruta, dpi=200, bbox_inches='tight')
+    path = os.path.join('analisis_avanzado', filename)
+    plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.close(fig)
-    print(f"✅ Guardado: {ruta}")
+    print(f"Saved: {path}")
 
-def generar_todas_streamlines():
-    """Genera todas las visualizaciones de streamlines."""
+def generate_all_streamlines():
+    """Generates all streamline visualizations."""
     print("=" * 80)
-    print("GENERACIÓN DE LÍNEAS DE CORRIENTE (STREAMLINES)")
+    print("STREAMLINE GENERATION")
     print("=" * 80)
-    print("\n🌊 Ejecutando simulación...\n")
+    print("\nRunning simulation...\n")
     
-    # Ejecutar simulación
+    # Run simulation
     solver = FlujoNewtonRaphson()
-    resultado = solver.solve(linear_solver_method='conjugate-gradient', analisis_teorico=False)
+    result = solver.solve(linear_solver_method='conjugate-gradient', theoretical_analysis=False)
     
-    if not resultado['converged']:
-        print("❌ Error: La simulación no convergió.")
+    if not result['converged']:
+        print("Error: Simulation did not converge.")
         return
     
-    Vx = resultado['solution']
+    Vx = result['solution']
     
-    print("✓ Simulación completada")
-    print(f"✓ Iteraciones: {resultado['iterations']}")
-    print(f"✓ Tiempo: {resultado['time']:.2f}s\n")
+    print("Simulation completed")
+    print(f"Iterations: {result['iterations']}")
+    print(f"Time: {result['time']:.2f}s\n")
     
-    # Calcular campo Vy
-    print("📐 Calculando campo de velocidades Vy...\n")
-    Vy = calcular_campo_vy(Vx)
+    # Calculate Vy field
+    print("Calculating Vy velocity field...\n")
+    Vy = calculate_vy_field(Vx)
     
-    # Generar visualizaciones
-    print("🎨 Generando visualizaciones...\n")
+    # Generate visualizations
+    print("Generating visualizations...\n")
     
-    # 1. Streamlines básicas (sin interpolación)
-    crear_streamlines_basico(
+    # 1. Basic Streamlines (no interpolation)
+    create_streamlines_basic(
         Vx, Vy,
-        'Líneas de Corriente - Resolución Original (50×5)',
+        'Streamlines - Original Resolution (50x5)',
         'streamlines_basico.png'
     )
     
-    # 2. Streamlines con interpolación manual (V4)
-    crear_streamlines_interpolado(
+    # 2. Streamlines with manual interpolation (V4)
+    create_streamlines_interpolated(
         Vx, Vy, 'manual',
-        'Líneas de Corriente - Interpolación Spline Cúbico Natural 1D',
+        'Streamlines - 1D Natural Cubic Spline Interpolation',
         'streamlines_v4_manual.png'
     )
     
-    # 3. Streamlines con interpolación bicúbica (V4.1)
-    crear_streamlines_interpolado(
+    # 3. Streamlines with bicubic interpolation (V4.1)
+    create_streamlines_interpolated(
         Vx, Vy, 'bicubica',
-        'Líneas de Corriente - Interpolación Spline Bicúbico',
+        'Streamlines - Bicubic Spline Interpolation',
         'streamlines_v4_1_bicubica.png'
     )
     
     print("\n" + "=" * 80)
-    print("✅ TODAS LAS VISUALIZACIONES GENERADAS EXITOSAMENTE")
+    print("ALL VISUALIZATIONS GENERATED SUCCESSFULLY")
     print("=" * 80)
-    print("\nArchivos guardados en: analisis_avanzado/")
+    print("\nFiles saved in: analisis_avanzado/")
     print("  - streamlines_basico.png")
     print("  - streamlines_v4_manual.png")
     print("  - streamlines_v4_1_bicubica.png\n")
 
 if __name__ == '__main__':
-    generar_todas_streamlines()
+    generate_all_streamlines()
