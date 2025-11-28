@@ -9,23 +9,25 @@ import matplotlib.pyplot as plt
 import sys
 import os
 
-# Import from existing code
-sys.path.insert(0, os.path.dirname(__file__))
-from campo_velocidadesV4 import (
+# Importar desde los modulos
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from modulos.campo_velocidadesV4 import (
     NewtonRaphsonFlowSolver, NY, NX, V0_INITIAL, VY_TEST,
     VIGA_INF_X_MIN, VIGA_INF_X_MAX, VIGA_INF_Y_MIN, VIGA_INF_Y_MAX,
     VIGA_SUP_X_MIN, VIGA_SUP_X_MAX, VIGA_SUP_Y_MIN, VIGA_SUP_Y_MAX,
     interpolate_cubic_natural_manual
 )
+from modulos.campo_velocidadesV4_1 import interpolate_bicubic
 
-# Import bicubic interpolation from V4.1
-import importlib.util
-spec = importlib.util.spec_from_file_location("campo_v4_1", "campo_velocidadesV4.1.py")
-campo_v4_1 = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(campo_v4_1)
-interpolate_bicubic_natural = campo_v4_1.interpolate_bicubic_natural
+# Alias for compatibility
+interpolate_bicubic_natural = interpolate_bicubic
 
 plt.style.use('dark_background')
+
+# Create output directory
+OUTPUT_DIR = 'analisis_avanzado'
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
 
 def calculate_vy_field(Vx_matrix):
     """

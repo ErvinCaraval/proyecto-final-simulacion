@@ -1,3 +1,9 @@
+"""
+Creacion de Animaciones Profesionales
+======================================
+Genera animaciones GIF de la convergencia de la simulacion CFD.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
@@ -6,6 +12,15 @@ from scipy.sparse.linalg import spsolve
 from numpy.linalg import norm
 from scipy.interpolate import CubicSpline, RectBivariateSpline
 import os
+import sys
+
+# Importar funciones de interpolacion desde los modulos
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from modulos.campo_velocidadesV4 import interpolate_cubic_natural_manual
+from modulos.campo_velocidadesV4_1 import interpolate_bicubic
+
+# Alias for compatibility
+interpolate_bicubic_natural = interpolate_bicubic
 
 # Aesthetic Configuration
 plt.style.use('dark_background')
@@ -157,33 +172,6 @@ def interpolate_history(history, extra_steps=19):
     smooth_history.append(history[-1])
     return smooth_history
 
-def interpolate_cubic_natural_manual(V_low_res):
-    INTERP_RESOLUTION = 10 
-    NY_HIGH = (NY - 1) * INTERP_RESOLUTION + 1
-    NX_HIGH = (NX - 1) * INTERP_RESOLUTION + 1
-    x_low = np.linspace(0, NX - 1, NX); y_low = np.linspace(0, NY - 1, NY)
-    x_high = np.linspace(0, NX - 1, NX_HIGH); y_high = np.linspace(0, NY - 1, NY_HIGH)
-    
-    V_mixed = np.zeros((NY, NX_HIGH))
-    for j in range(NY):
-        cs_x = CubicSpline(x_low, V_low_res[j, :], bc_type='natural')
-        V_mixed[j, :] = cs_x(x_high)
-        
-    V_high_res = np.zeros((NY_HIGH, NX_HIGH))
-    for i_prime in range(NX_HIGH):
-        cs_y = CubicSpline(y_low, V_mixed[:, i_prime], bc_type='natural')
-        V_high_res[:, i_prime] = cs_y(y_high)
-    return V_high_res
-
-def interpolate_bicubic_natural(V_low_res):
-    INTERP_RESOLUTION = 10 
-    NY_HIGH = (NY - 1) * INTERP_RESOLUTION + 1
-    NX_HIGH = (NX - 1) * INTERP_RESOLUTION + 1
-    x_low = np.linspace(0, NX - 1, NX); y_low = np.linspace(0, NY - 1, NY)
-    x_high = np.linspace(0, NX - 1, NX_HIGH); y_high = np.linspace(0, NY - 1, NY_HIGH)
-    interp_func = RectBivariateSpline(y_low, x_low, V_low_res, kx=3, ky=3)
-    return interp_func(y_high, x_high)
-
 def create_animation(interpolation_type, filename):
     print(f"Generating extended animation: {filename}...")
     solver = AnimatedNewtonRaphsonFlow()
@@ -240,6 +228,24 @@ def create_animation(interpolation_type, filename):
     plt.close(fig)
     print(f"Animation saved to: {full_path}")
 
-if __name__ == "__main__":
+def main():
+    """Funcion principal para generar animaciones."""
+    print("=" * 80)
+    print("GENERACION DE ANIMACIONES PROFESIONALES")
+    print("=" * 80)
+    print()
+    
     create_animation("v4_manual", "simulation_v4_manual.gif")
     create_animation("v4_1_bicubic", "simulation_v4_1_bicubic.gif")
+    
+    print()
+    print("=" * 80)
+    print("ANIMACIONES GENERADAS EXITOSAMENTE")
+    print("=" * 80)
+    print(f"\nArchivos guardados en: {OUTPUT_DIR}/")
+    print("  - simulation_v4_manual.gif")
+    print("  - simulation_v4_1_bicubic.gif")
+    print()
+
+if __name__ == "__main__":
+    main()
